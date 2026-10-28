@@ -1,0 +1,203 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Freelance Quest — Venue Trouble</title><style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#493449 0%,#1a1729 70%);color:#f6ddb0;font:15px/1.45 Impact, "Arial Narrow", sans-serif}main{max-width:1040px;margin:0 auto;padding:8px 12px 24px}header{text-align:center;margin-bottom:6px}h1{font-family:Impact, "Arial Narrow", sans-serif;text-shadow:4px 4px 0 #2b1b31;color:#f4c986;letter-spacing:5px;font-size:clamp(22px,3.2vw,34px);margin:0;font-weight:900}.sub{margin:0;color:#d5bda7;letter-spacing:2px;text-transform:uppercase;font-size:11px}.game{border:7px ridge #9e775b;box-shadow:0 8px 0 #100e1b,0 20px 50px #0c0b15;background:#171525;position:relative}canvas{display:block;width:100%;height:auto;image-rendering:pixelated;cursor:crosshair;touch-action:manipulation}.hud{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 14px;background:#262035;border-top:3px solid #8e6556;color:#f2c891;font:12px/1.3 Impact, "Arial Narrow", sans-serif}.control{background:#241d32;border:4px ridge #8c665b;margin-top:5px;padding:7px;display:grid;grid-template-columns:minmax(225px,1fr) 1.4fr;gap:8px}.verbs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;align-content:start}.verbs button:last-child{grid-column:span 2}button{font:700 13px/1.2 Impact, "Arial Narrow", sans-serif;color:#f9e4bd;background:#48344b;border:2px solid #95745d;border-bottom:4px solid #171523;padding:7px 6px;cursor:pointer;text-shadow:1px 1px #1d1625}button:hover,button:focus-visible{background:#725069;outline:2px solid #f7d59d;outline-offset:1px}button.active{background:#a66b4f;border-color:#f5ca85;color:#fff4d7}.inventory{display:flex;align-content:start;gap:8px;flex-wrap:wrap;min-height:64px;padding:6px;background:#161626;border:2px inset #6d5360}.inventory:before{content:'POCKETS';display:block;width:100%;font:700 12px/1.3 Impact, "Arial Narrow", sans-serif;letter-spacing:2px;color:#d9a978}.inventory button{background:#44344b}.inventory button.selected{background:#98634d;border-color:#f9d18c}.cast{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.cast span{background:#382b3e;border-left:4px solid #e4b16f;padding:5px 9px;font:12px/1.3 Impact, "Arial Narrow", sans-serif;color:#ffe5bb}.cast b{color:#fff}.panel{min-height:82px;margin-top:5px;padding:9px 12px;background:#201b2c;border:3px ridge #806055;font:15px/1.4 Impact, "Arial Narrow", sans-serif}.dialogue{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.dialogue button{font:12px/1.4 Impact, "Arial Narrow", sans-serif;text-align:left}.bottom{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px}.tip{color:#c3a9a4;font-size:12px}#ending{display:none;background:#3b2c3d;border:2px solid #f7d195;padding:12px;margin-top:12px}#ending.visible{display:block}.modal{position:fixed;inset:0;z-index:10;background:rgba(10,8,18,.88);display:grid;place-items:center;padding:16px}.modal[hidden]{display:none}.modal-inner{max-width:480px;width:100%;border:6px ridge #c1986b;background:#30253c;box-shadow:0 18px 60px #000;padding:30px;text-align:center}.modal h2{color:#f7ce8c;letter-spacing:2px;font-size:29px}.modal p{color:#e6d0bb}.modal input{width:100%;padding:13px;background:#191626;border:2px solid #c1986b;color:white;font:19px Impact, "Arial Narrow", sans-serif;margin:12px 0}.modal button{width:100%}@media(max-width:650px){main{padding:12px 8px}.control{grid-template-columns:1fr}.verbs{grid-template-columns:repeat(5,minmax(0,1fr))}.verbs button:last-child{grid-column:auto}.verbs button{font-size:10px;padding:10px 3px}.hud{font-size:10px}h1{letter-spacing:2px}}
+button,.panel,.hud,.inventory,.modal,input{letter-spacing:.45px}.modal input{text-transform:none}</style></head><body><main><header><h1>FREELANCE QUEST</h1><p class="sub">CHAPTER 1: VENUE TROUBLE · A Montréal point-and-click misadventure</p></header><div class="game"><canvas id="screen" width="640" height="360" aria-label="Pixel-art venue adventure"></canvas><div class="hud"><span id="room"></span><button id="musicToggle" type="button" aria-pressed="false">♫ MUSIC OFF</button><span id="stats">TONIGHT: $400 GIG · HOVER TO IDENTIFY</span></div></div><div class="control"><div class="verbs" id="verbs"><button data-verb="walk">WALK TO</button><button data-verb="look">LOOK AT</button><button data-verb="pick">PICK UP</button><button data-verb="use">USE</button><button data-verb="talk">TALK TO</button></div><div class="inventory" id="inventory"></div></div><div class="panel"><div id="message" aria-live="polite">Get past the bouncer, find a fresh battery, and claim the best camera position.</div><div class="dialogue" id="choices"></div></div><div id="ending"></div><div class="bottom"><button id="reset">NEW GAME</button><span class="tip">Select a verb, then click an object. Select an inventory item to USE it. Saves automatically.</span></div></main><div class="modal" id="nameModal" hidden><form class="modal-inner" id="nameForm"><h2>WHO ARE YOU?</h2><p>Enter your name before the gig begins. This is how the characters will address you.</p><label for="nameInput">YOUR CHARACTER'S NAME</label><input id="nameInput" maxlength="22" placeholder="Enter your name" required autocomplete="off"><button type="submit">BEGIN THE GIG →</button></form></div><script>
+const C=document.getElementById('screen'),g=C.getContext('2d');g.imageSmoothingEnabled=false;
+const $=id=>document.getElementById(id), KEY='freelanceQuestVenue_v1';
+const fresh=()=>({name:'',room:'entrance',x:330,target:330,verb:'walk',selected:null,inventory:['Camera kit','Dead battery'],flags:{},done:false});
+let s=fresh();try{const saved=JSON.parse(localStorage.getItem(KEY));if(saved&&['entrance','backstage','floor'].includes(saved.room))s={...fresh(),...saved}}catch(e){}
+const player=()=>s.name||'Rookie';
+const has=i=>s.inventory.includes(i), flag=i=>!!s.flags[i];
+function save(){try{localStorage.setItem(KEY,JSON.stringify(s))}catch(e){}}
+let speech={text:'',speaker:'hero',until:0};
+function speechFor(message){
+ const m=message.match(/^(BOUNCER|SOUND TECH|TECH|FAN|CROWD|CLIENT):\s*[“"]?([^”"]+)/i);
+ let speaker=m?({BOUNCER:'bouncer','SOUND TECH':'tech',TECH:'tech',FAN:'fan',CROWD:'crowd',CLIENT:'hero'}[m[1].toUpperCase()]||'hero'):'hero';
+ let text=m?m[2]:message;
+ // Keep dialogue above characters, while the full text remains accessible below.
+ speech={speaker,text:text.slice(0,155),until:Infinity};
+}
+function say(message,choices=[]){speechFor(message);$('message').textContent=message;$('choices').replaceChildren();for(const [label,fn] of choices){let b=document.createElement('button');b.textContent=label;b.onclick=()=>{fn();save();update()};$('choices').append(b)}save()}
+function add(i){if(!has(i))s.inventory.push(i)}function drop(i){s.inventory=s.inventory.filter(v=>v!==i);if(s.selected===i)s.selected=null}
+const spots={entrance:[
+{id:'bouncer',name:'bouncer',box:[86,139,104,170],walk:215},
+{id:'poster',name:'concert poster',box:[236,106,105,114],walk:290},
+{id:'phone',name:'smartphone with booking email',box:[367,190,51,82],walk:360},
+{id:'list',name:'guest list',box:[187,226,95,73],walk:232},
+{id:'door',name:'venue door',box:[457,85,137,224],walk:476}],
+backstage:[{id:'tech',name:'sound tech',box:[85,143,110,168],walk:200},
+{id:'case',name:'equipment case',box:[238,214,108,91],walk:295},
+{id:'charger',name:'battery charger',box:[363,171,110,110],walk:417},
+{id:'floorDoor',name:'concert floor',box:[510,96,119,218],walk:520},
+{id:'exit',name:'front entrance',box:[5,116,75,193],walk:65}],
+floor:[{id:'fan',name:'tall fan',box:[130,159,106,158],walk:245},
+{id:'spot',name:'prime camera position',box:[292,231,132,85],walk:344},
+{id:'crowd',name:'crowd',box:[428,170,112,140],walk:450},
+{id:'stage',name:'stage',box:[225,68,214,120],walk:332},
+{id:'back',name:'backstage',box:[545,95,85,220],walk:558}]};
+const rooms={entrance:'VENUE ENTRANCE',backstage:'BACKSTAGE',floor:'CONCERT FLOOR'};
+function update(){showCast();document.querySelectorAll('[data-verb]').forEach(b=>b.classList.toggle('active',b.dataset.verb===s.verb));$('room').textContent=player().toUpperCase()+' · '+rooms[s.room];const inv=$('inventory');inv.replaceChildren();for(const item of s.inventory){const b=document.createElement('button');b.textContent=(s.selected===item?'▸ ':'')+item;b.classList.toggle('selected',s.selected===item);b.onclick=()=>{s.selected=s.selected===item?null:item;s.verb='use';say(s.selected?'Selected '+item+'. Click an object to use it.':'Item deselected.');update()};inv.append(b)}if(!s.inventory.length)inv.textContent='INVENTORY: (empty)';$('stats').textContent='ACCESS '+(flag('admitted')?'✓':'—')+' · BATTERY '+(flag('powered')?'✓':'—')+' · SHOT '+(flag('position')?'✓':'—');$('ending').classList.toggle('visible',s.done);$('ending').textContent=s.done?'CHAPTER COMPLETE · THANK YOU FOR PLAYING!':'';save()}
+function showCast(){}function travel(to){if(to==='door'){if(!flag('admitted'))return say('The bouncer folds his arms. You are not on the list.');s.room='backstage';s.x=520;s.target=520;say('The bouncer waves you inside. Find JO, the sound technician in the bright orange shirt, for a spare battery.')}else if(to==='floorDoor'){if(!has('Charged battery')&&!flag('powered'))return say('Your camera has no power. Find a fresh battery before the set.');s.room='floor';s.x=550;s.target=550;say('The stage glows beyond the crowd. ALEX, in the red shirt and backpack, stands in your ideal filming position.')}else if(to==='exit'){s.room='entrance';s.x=470;s.target=470;say('Back at the entrance. The bouncer gives you a solemn nod.')}else if(to==='back'){s.room='backstage';s.x=520;s.target=520;say('Backstage. The sound tech is coiling cables with purpose.')}update()}
+function talk(id){if(id==='bouncer'){if(flag('admitted'))return say('BOUNCER: “Go on, Spielberg. Doors are open.”');return say('BOUNCER: “Name?” YOU: “I’m filming tonight.” BOUNCER: “No camera operator on my list.”',[
+['I swear I’m the cameraman.',()=>say('BOUNCER: “And I swear I’m the drummer. Show me something.”')],
+['Show the booking confirmation.',()=>{if(has('Booking confirmation')){s.flags.admitted=true;add('Crew pass');say('BOUNCER: “Promoter confirmed. Here’s your pass. Don’t block the fire exit.”')}else say('YOU: “It’s... somewhere in my emails.” BOUNCER: “Then find it.”')}],
+['Ask whose name is on the list.',()=>{s.flags.clue=true;say('BOUNCER: “Promoter’s under M. Tremblay. Your name is not. Try your phone.”')}]] )}
+if(id==='phone'){return say('YOUR PHONE — EMAIL FROM PROMOTER M. TREMBLAY: “Hey! Can you film tonight? Two cameras, full edit, $400. I told security a videographer is coming.”',[
+['Ask for written confirmation.',()=>{s.flags.confirmed=true;add('Booking confirmation');say('The promoter replies with a written confirmation. You save the message as proof for security.')}],
+['Ask for a higher rate.',()=>say('CLIENT: “We already printed the poster. Can we discuss this after the show?” You sigh. The $400 gig awaits.')]])}
+if(id==='tech'){if(!flag('admitted'))return say('You need to get past security first.');if(flag('batteryGranted'))return say('TECH: “I gave you the spare. Make sure it’s charged before you film.”');return say('SOUND TECH: “You look like you’ve seen a dead battery.” YOU: “How did you know?” TECH: “It’s your face.”',[
+['Could I borrow a spare NP-FZ100?',()=>{s.flags.batteryGranted=true;add('Charged battery');say('TECH: “One spare. Return it after the set. I put my initials on it.”')}],
+['Any advice for the best shot?',()=>say('TECH: “Centre aisle is clean, but there’s a tall fan planted there. Try being polite. Wild concept, I know.”')]])}
+if(id==='fan')return say('FAN: “I got here three hours early. This spot is mine.”',[
+['I’m filming for the venue. Could we share this space?',()=>{if(has('Crew pass')){s.flags.position=true;say('FAN: “Oh, you’re crew? Sure. Just don’t block my view.” They step to the side.')}else say('FAN: “That’s what every guy with a phone says.”')}],
+['Offer a better view by the aisle.',()=>{if(flag('stageTip')){s.flags.position=true;say('FAN: “Wait, you know the side aisle has a better sightline? Deal!”')}else say('FAN: “How do I know it’s better? Go look at the stage first.”')}],
+['Insist loudly.',()=>say('FAN: “Nope.” The entire crowd turns to stare. An impressive tactical failure.')]]) ;
+if(id==='crowd')return say('CROWD: “We’ve all been waiting. Please don’t put a tripod in our faces.”');say('No answer. Even the walls are on a tight schedule.')}
+function act(h){if(s.done)return say('The cameras are rolling. Chapter complete! Press NEW GAME to start again.');const id=h.id,v=s.verb,item=s.selected;
+if(v==='walk'){if(['door','floorDoor','exit','back'].includes(id))return travel(id);return say('You walk toward the '+h.name+'.')}
+if(v==='look'){const d={bouncer:'The bouncer: enormous shoulders, SECURITY badge, clipboard, and a strict guest list.',poster:'TONIGHT: LIVE MUSIC. “Professional videography by... TBD.”',phone:'A smartphone, face up on the check-in table. The lock screen says: PROMOTER — BOOKING CONFIRMATION. Click TALK TO or USE to open the email.',list:'Guest list: M. Tremblay, band, sound tech, security. No camera operator.',door:'Behind this door: a gig, a soundboard, and several opportunities for embarrassment.',tech:'The sound technician wears headphones, an orange work shirt, and a thousand-yard stare.',case:'A battered equipment case. It contains a power cable and old gaffer tape.',charger:'A charging station. The green light looks promising.',floorDoor:'The concert floor. Audience already gathering.',exit:'The entrance is back that way.',fan:'The tall fan in a red shirt and huge backpack is blocking your camera position.',spot:'Centre aisle. Clean sightline, excellent framing, currently contested.',crowd:'A thick wall of bodies and glowing phones.',stage:'You can see the stage from here. The side aisle is actually a good alternative.',back:'The backstage corridor.'};return say(d[id])}
+if(v==='pick'){if(id==='case'){if(!has('Gaffer tape')){add('Gaffer tape');return say('You pocket a roll of gaffer tape. The universal solution to all production problems.')}return say('Nothing else useful in the case.')}if(id==='charger')return say('The charger is plugged in. Ask the sound tech before borrowing anything.');return say('That is not something you should put in his bag.')}
+if(v==='talk')return talk(id);
+if(v==='use'){
+if(id==='phone')return talk('phone');
+if(id==='door'||id==='floorDoor'||id==='exit'||id==='back')return travel(id);
+if(id==='bouncer'&&item==='Booking confirmation'){s.flags.admitted=true;add('Crew pass');return say('BOUNCER: “Okay, it checks out. Here’s your crew pass.”')}
+if(id==='charger'&&item==='Dead battery')return say('The old battery refuses to charge in time. You need a fresh spare. Talk to the sound tech.');
+if(id==='charger'&&item==='Charged battery')return say('The spare is already fully charged. Put it in your camera kit.');
+if(id==='case'&&item==='Charged battery')return say('That is the equipment case, not your camera. Select your camera kit as the target instead.');
+if(item==='Charged battery'&&id==='spot'){drop('Charged battery');drop('Dead battery');s.flags.powered=true;return say('Fresh battery fitted to the camera. The power indicator glows green. Now claim your shot.')} 
+if(item==='Crew pass'&&id==='fan'){s.flags.position=true;return say('You show your crew pass and politely explain the shot. FAN: “Fair enough.” They make room.')}
+if(item==='Gaffer tape'&&id==='spot')return say('You mark a tidy tripod footprint. Nice, but you still need the fan to move.');
+if(item==='Camera kit'&&id==='spot'){if(!flag('powered'))return say('Your camera battery is dead. Use a fresh battery on this camera position first.');if(!flag('position'))return say('The fan is still standing in the perfect shot. Negotiate some space.');s.done=true;s.flags.finaleStarted=Date.now();return say('The camera is rolling. For a moment, you forget the invoice, the negotiations, and the dead battery. The music takes over. You smile.')}
+return say(item?'Using '+item+' on '+h.name+' does nothing. Classic freelance problem.':'Select an inventory item, then click its target.')}
+}
+const R=(x,y,w,h,c)=>{g.fillStyle=c;g.fillRect(x,y,w,h)},T=(txt,x,y,color='#f6d69d',size=12)=>{g.fillStyle=color;g.font='bold '+size+'px Impact, Arial Narrow, sans-serif';g.fillText(txt,x,y)};
+function brickWall(base,light){R(0,0,640,268,base);for(let row=0;row<15;row++){let y=row*19;for(let x=-40+(row%2)*42;x<640;x+=84){R(x,y,81,17,(row%3===0)?light:base);R(x,y+17,81,2,'#241c2e');R(x+81,y,3,19,'#241c2e')}}}
+function lamp(x,y){R(x-3,0,6,y,'#23202c');R(x-26,y,52,8,'#c7a16d');R(x-17,y+8,34,8,'#ffe5a2');g.fillStyle='rgba(255,207,125,.09)';g.beginPath();g.moveTo(x-18,y+16);g.lineTo(x-98,286);g.lineTo(x+98,286);g.lineTo(x+18,y+16);g.fill()}
+function bubble(t){
+ if(!speech.text||t>speech.until)return;
+ const speaker=speech.speaker;
+ let x=s.x, y=180;
+ if(speaker==='bouncer'&&s.room==='entrance'){x=136;y=150}
+ if(speaker==='tech'&&s.room==='backstage'){x=135;y=150}
+ if(speaker==='fan'&&s.room==='floor'){x=182;y=145}
+ if(speaker==='crowd'&&s.room==='floor'){x=475;y=170}
+ const words=speech.text.replace(/\s+/g,' ').split(' '),lines=[];let line='';
+ for(const word of words){if((line+' '+word).length>37&&line){lines.push(line);line=word}else line+=(line?' ':'')+word}if(line)lines.push(line);
+ const visible=lines.slice(0,4),w=Math.min(290,Math.max(110,Math.max(...visible.map(v=>v.length))*7+24)),h=visible.length*17+20;
+ const bx=Math.max(5,Math.min(635-w,x-w/2)),by=Math.max(8,Math.min(315-h,y-h-16));
+ R(bx+3,by+3,w,h,'#130f20');R(bx,by,w,h,'#f5d8a1');R(bx+3,by+3,w-6,h-6,'#39283e');
+ g.fillStyle='#f5d8a1';g.beginPath();g.moveTo(Math.max(bx+12,Math.min(bx+w-12,x)),by+h);g.lineTo(Math.max(bx+10,Math.min(bx+w-16,x))-7,by+h+9);g.lineTo(Math.max(bx+10,Math.min(bx+w-16,x))+7,by+h);g.fill();
+ visible.forEach((l,i)=>T(l,bx+11,by+19+i*17,'#ffe4b0',11));
+}
+function finale(t){
+ const palette=['#d34e91','#6b73ed','#f4b85e','#5cc5b2','#9a65d5'];
+ const beat=Math.floor(t/460),pulse=(Math.sin(t/340)+1)/2;
+ R(0,0,640,360,'#151329');
+ for(let i=0;i<5;i++){
+  const x=100+i*112+Math.sin(t/1700+i)*18;
+  g.fillStyle=palette[(beat+i)%palette.length]+'66';
+  g.beginPath();g.moveTo(x,15);g.lineTo(x-100,285);g.lineTo(x+95,285);g.closePath();g.fill();
+ }
+ R(0,0,640,37,'#282139');T('THE GIG — THE MUSIC FINALLY STARTS',100,26,'#f9dcaf',16);
+ R(0,275,640,85,'#191624');
+ for(let i=0;i<17;i++){let x=i*43-10;R(x,266+Math.sin(t/240+i)*5,32,110,'#121321');R(x+8,249+Math.sin(t/240+i)*5,18,23,'#121321')}
+ // the band in silhouette, with a drummer and guitarist
+ R(120,154,18,104,'#171827');R(111,139,36,25,'#171827');R(83,202,83,12,'#171827');
+ R(300,157,22,96,'#171827');R(292,139,36,25,'#171827');R(315,191,68,12,'#171827');
+ R(435,163,23,95,'#171827');R(427,143,38,26,'#171827');R(404,208,81,13,'#171827');
+ // foreground camera operator, relaxed posture and a smile
+ R(487,185,48,61,'#2b918d');R(495,157,33,34,'#d7a07c');R(493,151,36,12,'#262432');
+ R(501,175,4,3,'#241c29');R(517,175,4,3,'#241c29');
+ R(505,182,13,3,'#7e463c');R(507,185,9,3,'#fff0ce');
+ R(495,247,17,44,'#29283a');R(518,247,17,44,'#29283a');
+ R(450,215,39,23,'#1e2430');R(452,218,34,17,'#5b6670');R(463,221,12,12,'#182c37');R(480,224,21,7,'#262738');
+ T('THANK YOU FOR PLAYING!',155,315,'#fff1c9',24);
+ T('The camera rolls. You smile. The music makes it worthwhile.',113,338,'#f4c7ac',12);
+ if(pulse>.8){R(0,0,640,4,palette[beat%palette.length])}
+}
+function art(t){if(s.done){finale(t);return;}const r=s.room;R(0,0,640,360,'#1a182b');
+if(r==='entrance'){
+brickWall('#46364b','#514057');R(0,262,640,98,'#302a38');for(let x=0;x<640;x+=74){R(x,273,72,2,'#554452');R(x+30,307,2,23,'#554452')}
+R(429,54,190,248,'#201b2b');R(440,65,168,236,'#74505c');R(449,74,151,218,'#1e1d30');R(464,89,123,200,'#343046');R(478,102,96,158,'#1d2436');R(526,172,6,8,'#e4b572');R(448,58,151,24,'#b67e58');T('LE PHARE',465,76,'#ffe5ad',16);
+R(223,91,124,137,'#2a2234');R(229,97,112,125,'#b85b66');R(237,105,96,108,'#583951');T('LIVE',249,143,'#ffe7a8',25);T('TONIGHT',244,165,'#f3c58e',12);T('8 PM',260,193,'#ffe7a8',14);
+R(193,234,92,58,'#c7aa85');R(198,240,82,47,'#f0d4a3');T('GUEST',211,254,'#3d3240',10);T('LIST',222,267,'#3d3240',10);
+R(343,268,96,11,'#796071');R(355,279,7,26,'#433343');R(423,279,7,26,'#433343');R(373,202,38,67,'#090e1b');R(376,205,32,60,'#b4b9ba');R(379,210,26,51,'#2f5870');R(382,213,20,5,'#e6ce9d');T('EMAIL',381,227,'#ffffff',7);R(382,234,20,2,'#a9d3d5');R(382,241,18,2,'#a9d3d5');R(382,248,20,2,'#a9d3d5');R(390,261,5,2,'#f2e3b6');T('BOOKING EMAIL',343,192,'#ffe4b0',10);lamp(144,45);bouncer(136,280);T('BOUNCER',94,178,'#ffe4a8',11);T('SECURITY',92,102,'#f9d6a2',12);
+}else if(r==='backstage'){
+R(0,0,640,267,'#384451');for(let x=0;x<640;x+=78){R(x,0,3,268,'#303743');R(x+6,42,69,2,'#4b5562')}R(0,265,640,95,'#383540');R(0,289,640,4,'#675565');R(510,87,122,218,'#171e2a');R(520,100,99,197,'#323b48');R(5,102,75,201,'#202431');R(17,113,49,170,'#383343');R(224,212,135,81,'#181d28');R(232,220,119,65,'#6e5b52');for(let i=0;i<5;i++)R(242+i*20,225,3,53,'#a18569');R(364,163,121,112,'#252b34');R(373,174,101,65,'#788487');R(392,183,63,34,'#273d3e');R(403,190,40,17,'#91d9ad');T('100%',394,229,'#b8e6bd',12);lamp(320,54);soundTech(135,281);T('JO — AUDIO',81,194,'#ffe3a3',12);T('BACKSTAGE',238,92,'#f8dba6',18);T('STAGE →',513,80,'#f5d6a1',12);
+}else{
+R(0,0,640,260,'#201c32');R(0,0,640,72,'#3b2a49');for(let x=0;x<640;x+=56)R(x,44,3,220,'#2a253e');R(186,58,290,156,'#6d3e66');R(200,68,261,132,'#ba6a7c');R(210,78,239,116,'#302b4e');for(let i=0;i<6;i++){R(227+i*38,89,7,91,i%2?'#c99b79':'#8b709d')}R(285,131,53,59,'#282738');R(349,129,45,61,'#26283a');R(300,119,20,15,'#d6ad85');R(360,116,20,15,'#d6ad85');R(0,262,640,98,'#342c40');R(287,224,151,93,'#4c5863');R(299,240,127,67,'#77757a');for(let i=0;i<6;i++)person(34+i*100,295,i%2?'#454865':'#6e536f',false);fanCharacter(182,288);R(548,92,83,213,'#232333');T('STAGE',300,62,'#ffdc9c',17);T('CAMERA ZONE',292,217,'#ffdb9b',12);lamp(101,54);lamp(528,54)
+}
+// character and classic adventure status strip
+phil(s.x,289,t);R(0,329,640,31,'#181626');R(0,328,640,2,'#a47863');T('✦  '+rooms[r]+'  ·  THE $400 GIG',13,349,'#f1c88d',12);bubble(t)
+}
+function person(x,y,shirt,big){R(x-11,y-64,22,22,'#cf9877');R(x-14,y-43,28,40,shirt);R(x-11,y-3,9,25,'#242536');R(x+2,y-3,9,25,'#242536');R(x-12,y-70,24,8,'#25222b');if(big)R(x-18,y-40,7,40,'#c69470')}
+function bouncer(x,y){
+ R(x-21,y-87,42,28,'#c18b67');R(x-24,y-95,48,13,'#171b25');R(x-27,y-58,54,59,'#182737');R(x-22,y-57,44,7,'#3b5872');R(x-16,y-46,32,10,'#344455');R(x-23,y+1,19,26,'#20202c');R(x+4,y+1,19,26,'#20202c');R(x-7,y-44,14,10,'#e5bb79');T('SEC',x-10,y-29,'#f4c37b',9);R(x+23,y-52,13,40,'#b88360');R(x-36,y-52,13,40,'#b88360');R(x+20,y-55,18,28,'#8a715c');
+}
+function soundTech(x,y){
+ R(x-13,y-77,26,24,'#bc8d70');R(x-16,y-85,32,12,'#26212e');R(x-20,y-59,40,57,'#e5a34c');R(x-18,y-55,36,8,'#f6d36d');R(x-16,y-43,32,5,'#e3b17a');R(x-14,y-2,11,27,'#34313b');R(x+3,y-2,11,27,'#34313b');R(x-22,y-67,8,23,'#1b1b2c');R(x+14,y-67,8,23,'#1b1b2c');R(x+18,y-58,16,7,'#c2c8c2');R(x+29,y-54,3,18,'#c2c8c2');
+}
+function fanCharacter(x,y){
+ R(x-14,y-107,28,26,'#d4a281');R(x-16,y-113,32,11,'#613f33');R(x-20,y-81,40,78,'#b93650');R(x-13,y-74,26,9,'#e07b84');R(x-25,y-68,8,51,'#d4a281');R(x+17,y-68,8,51,'#d4a281');R(x-15,y-3,12,27,'#302a3c');R(x+3,y-3,12,27,'#302a3c');R(x+19,y-75,20,65,'#65566d');R(x+23,y-69,12,55,'#453d55');
+}
+function phil(x,y,t){const step=Math.abs(s.target-s.x)>2?Math.floor(t/140)%2:0;R(x-11,y-69,22,23,'#d8a078');R(x-12,y-73,24,9,'#262433');R(x-14,y-46,28,40,'#38a4a1');R(x-11,y-42,22,5,'#9ce0c9');R(x-17,y-39,5,29,'#d8a078');R(x+12,y-39,5,29,'#d8a078');R(x-11,y-6,9,27+(step?3:0),'#252738');R(x+2,y-6,9,27+(step?0:3),'#252738');R(x+4,y-59,3,3,'#222');R(x-14,y+21,13,5,'#171725');R(x+1,y+21,13,5,'#171725')}
+function loop(t){if(Math.abs(s.x-s.target)>1)s.x+=(s.target>s.x?1:-1)*Math.min(2.6,Math.abs(s.target-s.x));art(t);requestAnimationFrame(loop)}
+function hit(x,y){return [...spots[s.room]].reverse().find(h=>{let [a,b,w,z]=h.box;return x>=a&&x<=a+w&&y>=b&&y<=b+z})}
+C.addEventListener('click',e=>{let b=C.getBoundingClientRect(),x=(e.clientX-b.left)*640/b.width,y=(e.clientY-b.top)*360/b.height,h=hit(x,y);if(!h){if(s.verb==='walk'){s.target=Math.max(22,Math.min(615,x));say('You walk across the venue.')}else say('Nothing to interact with there.');return}s.target=h.walk;act(h);update()});
+C.addEventListener('mousemove',e=>{let b=C.getBoundingClientRect();C.title=hit((e.clientX-b.left)*640/b.width,(e.clientY-b.top)*360/b.height)?.name||'Walkable floor'});
+// Chiptune audio: slow tempo, stop active voices and disconnect output on mute.
+let audioCtx=null, musicTimer=null, musicOn=false, noteIndex=0, nextNote=0, masterGain=null;
+const activeNotes=new Set();
+// Original upbeat, jazzy indie-chiptune with syncopated bass and bright melodic turns.
+const melody=[69,72,76,79,76,74,72,null,69,72,76,81,79,76,74,null,72,76,79,83,81,79,76,74,72,74,76,79,76,72,69,null,69,72,76,79,81,79,76,74,72,69,67,69,72,74,76,null];
+const bass=[45,52,48,52,41,48,43,50,45,52,41,48,43,50,40,47];
+function chipNote(midi,start,duration,type,volume){
+ if(midi==null||!audioCtx||!masterGain)return;
+ const o=audioCtx.createOscillator(), gain=audioCtx.createGain();
+ o.type=type;o.frequency.value=440*Math.pow(2,(midi-69)/12);
+ gain.gain.setValueAtTime(.0001,start);
+ gain.gain.exponentialRampToValueAtTime(volume,start+.009);
+ gain.gain.exponentialRampToValueAtTime(.0001,start+duration);
+ o.connect(gain);gain.connect(masterGain);activeNotes.add(o);o.onended=()=>{activeNotes.delete(o);try{o.disconnect();gain.disconnect()}catch(e){}};o.start(start);o.stop(start+duration+.02);
+}
+function scheduleMusic(){
+ if(!musicOn||!audioCtx)return;
+ while(nextNote<audioCtx.currentTime+.15){
+  const step=noteIndex%melody.length;
+  chipNote(melody[step],nextNote,.29,'triangle',.034);
+  if(step%2===0)chipNote(bass[Math.floor(step/2)%bass.length],nextNote,.38,'triangle',.032);if(step%4===1)chipNote(76+(Math.floor(step/8)%3)*2,nextNote,.14,'square',.008);
+  noteIndex++;nextNote+=.34;
+ }
+}
+const musicButton=$('musicToggle');
+function setMusicButton(){musicButton.textContent=musicOn?'♫ MUSIC ON':'♫ MUSIC OFF';musicButton.setAttribute('aria-pressed',String(musicOn))}
+musicButton.onclick=async()=>{
+ musicOn=!musicOn;setMusicButton();
+ if(!musicOn){
+  clearInterval(musicTimer);musicTimer=null;
+  if(audioCtx){
+   if(masterGain){masterGain.gain.cancelScheduledValues(audioCtx.currentTime);masterGain.gain.setValueAtTime(0,audioCtx.currentTime);}
+   for(const note of activeNotes){try{note.stop()}catch(e){}}
+   activeNotes.clear();
+   // Stop the sound immediately; don't depend on suspend timing.
+   if(masterGain)masterGain.disconnect();
+   masterGain=null;
+   audioCtx.suspend().catch(()=>{});
+  }
+  return;
+ }
+ try{
+  if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  if(!masterGain){masterGain=audioCtx.createGain();masterGain.gain.value=0;masterGain.connect(audioCtx.destination)}
+  await audioCtx.resume();
+  if(!musicOn)return;
+  masterGain.gain.cancelScheduledValues(audioCtx.currentTime);masterGain.gain.setValueAtTime(1,audioCtx.currentTime);
+  clearInterval(musicTimer);noteIndex=0;nextNote=audioCtx.currentTime+.04;
+  scheduleMusic();musicTimer=setInterval(scheduleMusic,60);
+ }catch(e){musicOn=false;setMusicButton();musicButton.textContent='AUDIO UNAVAILABLE'}
+};
+document.querySelectorAll('[data-verb]').forEach(b=>b.onclick=()=>{s.verb=b.dataset.verb;s.selected=null;update()});$('reset').onclick=()=>{if(!confirm('Start a new game? Your progress will be replaced.'))return;s=fresh();askName();say('Tonight: convince security, find a charged battery, and get the perfect shot.');update()};
+function askName(){const modal=$('nameModal');modal.hidden=false;const input=$('nameInput');input.value=s.name||'';input.focus();}
+$('nameForm').onsubmit=e=>{e.preventDefault();const n=$('nameInput').value.trim().replace(/[<>]/g,'').slice(0,22);if(!n)return;s.name=n;$('nameModal').hidden=true;save();update();say('Welcome, '+n+'. You have one concert, no credentials, and a camera battery that is losing the will to live.')};
+update();askName();requestAnimationFrame(loop);
+</script></body></html>
